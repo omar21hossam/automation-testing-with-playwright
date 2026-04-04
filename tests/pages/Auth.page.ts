@@ -69,7 +69,7 @@ export class AuthPage {
     zipcode: string;
     mobile: string;
   }) {
-    await expect(this.page.locator(this.loc.accountInfoHeader.primary)).toBeVisible();
+    await expect(this.page.locator(this.loc.accountInfoHeader.locator)).toBeVisible();
     await this.smart.click(this.loc.genderMale);
     await this.smart.fill(this.loc.password, data.password);
     await this.smart.selectOption(this.loc.day, data.day);

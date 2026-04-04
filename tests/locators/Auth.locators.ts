@@ -1,303 +1,168 @@
+import type { SmartTarget } from '../utils/smartLocator';
+
 export class AuthLocators {
-  // Login section with fallbacks
-  readonly loginHeader = {
-    primary: '//*[@id="form"]/div/div/div[1]/div/h2',
-    fallbacks: [
-      'text=Login to your account',
-      'h2:has-text("Login")',
-      'form h2:has-text("Login")'
-    ]
+  readonly loginHeader: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[1]/div/h2',
+    prompt: 'Login section heading (h2) with text "Login to your account".',
   };
 
-  readonly loginEmail = {
-    primary: '//*[@id="form"]/div/div/div[1]/div/form/input[2]',
-    fallbacks: [
-      'input[type="email"]:below(:text("Login to your account"))',
-      'form input[type="email"]',
-      'input[name="email"]'
-    ]
+  readonly loginEmail: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[1]/div/form/input[2]',
+    prompt: 'Email input on the login form, type email, near the login heading.',
   };
 
-  readonly loginPassword = {
-    primary: '//*[@id="form"]/div/div/div[1]/div/form/input[3]',
-    fallbacks: [
-      'input[type="password"]',
-      'form input[type="password"]',
-      'input[name="password"]'
-    ]
+  readonly loginPassword: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[1]/div/form/input[3]',
+    prompt: 'Password input on the login form.',
   };
 
-  readonly loginButton = {
-    primary: '//*[@id="form"]/div/div/div[1]/div/form/button',
-    fallbacks: [
-      'form:has(input[type="password"]) >> text=Login',
-      'button:has-text("Login")',
-      'input[type="submit"]:has-text("Login")'
-    ]
+  readonly loginButton: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[1]/div/form/button',
+    prompt: 'Login submit button on the login form (e.g. text "Login").',
   };
 
-  readonly loginError = {
-    primary: '//*[@id="form"]/div/div/div[1]/div/form/p',
-    fallbacks: [
-      'text=Your email or password is incorrect!',
-      'form p:has-text("incorrect")',
-      '.error-message'
-    ]
+  readonly loginError: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[1]/div/form/p',
+    prompt: 'Error message paragraph under the login form when credentials are wrong.',
   };
 
-  readonly loggedInAs = {
-    primary: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[10]/a',
-    fallbacks: [
-      'xpath=//li/a[contains(.,"Logged in as ")]',
-      'text=Logged in as',
-      'header a:has-text("Logged in as")'
-    ]
+  readonly loggedInAs: SmartTarget = {
+    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[10]/a',
+    prompt: 'Header link showing logged-in user text starting with "Logged in as".',
   };
 
-  readonly deleteAccountLink = {
-    primary: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[5]/a',
-    fallbacks: [
-      'a[href="/delete_account"]',
-      'text=Delete Account',
-      'header a:has-text("Delete")'
-    ]
+  readonly deleteAccountLink: SmartTarget = {
+    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[5]/a',
+    prompt: 'Header link to delete account (href "/delete_account" or text "Delete Account").',
   };
 
-  // Signup section with fallbacks
-  readonly signupHeader = {
-    primary: '//*[@id="form"]/div/div/div[3]/div/h2',
-    fallbacks: [
-      'text=New User Signup!',
-      'h2:has-text("Signup")',
-      'form h2:has-text("Signup")'
-    ]
+  readonly signupHeader: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[3]/div/h2',
+    prompt: 'Signup section heading (h2) "New User Signup!".',
   };
 
-  readonly signupName = {
-    primary: '//*[@id="form"]/div/div/div[3]/div/form/input[2]',
-    fallbacks: [
-      'form >> input[name="name"]',
-      'input[placeholder*="name"]',
-      'input[type="text"]:below(:text("Signup"))'
-    ]
+  readonly signupName: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[3]/div/form/input[2]',
+    prompt: 'Name input on the signup form.',
   };
 
-  readonly signupEmail = {
-    primary: '//*[@id="form"]/div/div/div[3]/div/form/input[3]',
-    fallbacks: [
-      'form >> input[type="email"]',
-      'input[placeholder*="email"]',
-      'input[name="email"]:below(:text("Signup"))'
-    ]
+  readonly signupEmail: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[3]/div/form/input[3]',
+    prompt: 'Email input on the signup form.',
   };
 
-  readonly signupButton = {
-    primary: '//*[@id="form"]/div/div/div[3]/div/form/button',
-    fallbacks: [
-      'form >> text=Signup',
-      'button:has-text("Signup")',
-      'input[type="submit"]:has-text("Signup")'
-    ]
+  readonly signupButton: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[3]/div/form/button',
+    prompt: 'Signup submit button on the signup form.',
   };
 
-  readonly emailExists = {
-    primary: '//*[@id="form"]/div/div/div[3]/div/form/p',
-    fallbacks: [
-      'text=Email Address already exist!',
-      'form p:has-text("already exist")',
-      '.error-message:has-text("exist")'
-    ]
+  readonly emailExists: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div[3]/div/form/p',
+    prompt: 'Error message when email already exists on signup form.',
   };
 
-  // Account creation form with fallbacks
-  readonly accountInfoHeader = {
-    primary: '//*[@id="form"]/div/div/div/div[1]/h2/b',
-    fallbacks: [
-      'text=Enter Account Information',
-      'h2 b:has-text("Account")',
-      'form h2:has-text("Account")'
-    ]
+  readonly accountInfoHeader: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div/div[1]/h2/b',
+    prompt: 'Heading "Enter Account Information" on account details form.',
   };
 
-  readonly genderMale = {
-    primary: '//*[@id="id_gender1"]',
-    fallbacks: [
-      'input#id_gender1',
-      'input[value="Mr"]',
-      'input[type="radio"][name="title"]'
-    ]
+  readonly genderMale: SmartTarget = {
+    locator: '//*[@id="id_gender1"]',
+    prompt: 'Radio "Mr" / male gender on account form.',
   };
 
-  readonly password = {
-    primary: '//*[@id="password"]',
-    fallbacks: [
-      '#password',
-      'input[name="password"]',
-      'input[type="password"]:below(:text("Account"))'
-    ]
+  readonly password: SmartTarget = {
+    locator: '//*[@id="password"]',
+    prompt: 'Account password field #password.',
   };
 
-  readonly day = {
-    primary: '//*[@id="days"]',
-    fallbacks: [
-      '#days',
-      'select[name="days"]',
-      'select:below(:text("Date of Birth"))'
-    ]
+  readonly day: SmartTarget = {
+    locator: '//*[@id="days"]',
+    prompt: 'Day dropdown for date of birth.',
   };
 
-  readonly month = {
-    primary: '//*[@id="months"]',
-    fallbacks: [
-      '#months',
-      'select[name="months"]',
-      'select:below(:text("Date of Birth"))'
-    ]
+  readonly month: SmartTarget = {
+    locator: '//*[@id="months"]',
+    prompt: 'Month dropdown for date of birth.',
   };
 
-  readonly year = {
-    primary: '//*[@id="years"]',
-    fallbacks: [
-      '#years',
-      'select[name="years"]',
-      'select:below(:text("Date of Birth"))'
-    ]
+  readonly year: SmartTarget = {
+    locator: '//*[@id="years"]',
+    prompt: 'Year dropdown for date of birth.',
   };
 
-  readonly newsletter = {
-    primary: '//*[@id="newsletter"]',
-    fallbacks: [
-      '#newsletter',
-      'input[type="checkbox"][name="newsletter"]',
-      'input[type="checkbox"]:below(:text("Sign up"))'
-    ]
+  readonly newsletter: SmartTarget = {
+    locator: '//*[@id="newsletter"]',
+    prompt: 'Newsletter signup checkbox.',
   };
 
-  readonly offers = {
-    primary: '//*[@id="optin"]',
-    fallbacks: [
-      '#optin',
-      'input[type="checkbox"][name="optin"]',
-      'input[type="checkbox"]:below(:text("Receive special offers"))'
-    ]
+  readonly offers: SmartTarget = {
+    locator: '//*[@id="optin"]',
+    prompt: 'Special offers opt-in checkbox.',
   };
 
-  readonly firstName = {
-    primary: '//*[@id="first_name"]',
-    fallbacks: [
-      '#first_name',
-      'input[name="first_name"]',
-      'input[placeholder*="First Name"]'
-    ]
+  readonly firstName: SmartTarget = {
+    locator: '//*[@id="first_name"]',
+    prompt: 'First name input on account form.',
   };
 
-  readonly lastName = {
-    primary: '//*[@id="last_name"]',
-    fallbacks: [
-      '#last_name',
-      'input[name="last_name"]',
-      'input[placeholder*="Last Name"]'
-    ]
+  readonly lastName: SmartTarget = {
+    locator: '//*[@id="last_name"]',
+    prompt: 'Last name input on account form.',
   };
 
-  readonly company = {
-    primary: '//*[@id="company"]',
-    fallbacks: [
-      '#company',
-      'input[name="company"]',
-      'input[placeholder*="Company"]'
-    ]
+  readonly company: SmartTarget = {
+    locator: '//*[@id="company"]',
+    prompt: 'Company name input.',
   };
 
-  readonly address1 = {
-    primary: '//*[@id="address1"]',
-    fallbacks: [
-      '#address1',
-      'input[name="address1"]',
-      'input[placeholder*="Address"]'
-    ]
+  readonly address1: SmartTarget = {
+    locator: '//*[@id="address1"]',
+    prompt: 'Address line 1 input.',
   };
 
-  readonly address2 = {
-    primary: '//*[@id="address2"]',
-    fallbacks: [
-      '#address2',
-      'input[name="address2"]',
-      'input[placeholder*="Address 2"]'
-    ]
+  readonly address2: SmartTarget = {
+    locator: '//*[@id="address2"]',
+    prompt: 'Address line 2 input.',
   };
 
-  readonly country = {
-    primary: '//*[@id="country"]',
-    fallbacks: [
-      '#country',
-      'select[name="country"]',
-      'select:below(:text("Country"))'
-    ]
+  readonly country: SmartTarget = {
+    locator: '//*[@id="country"]',
+    prompt: 'Country dropdown.',
   };
 
-  readonly state = {
-    primary: '//*[@id="state"]',
-    fallbacks: [
-      '#state',
-      'input[name="state"]',
-      'input[placeholder*="State"]'
-    ]
+  readonly state: SmartTarget = {
+    locator: '//*[@id="state"]',
+    prompt: 'State input field.',
   };
 
-  readonly city = {
-    primary: '//*[@id="city"]',
-    fallbacks: [
-      '#city',
-      'input[name="city"]',
-      'input[placeholder*="City"]'
-    ]
+  readonly city: SmartTarget = {
+    locator: '//*[@id="city"]',
+    prompt: 'City input field.',
   };
 
-  readonly zipcode = {
-    primary: '//*[@id="zipcode"]',
-    fallbacks: [
-      '#zipcode',
-      'input[name="zipcode"]',
-      'input[placeholder*="Zip"]'
-    ]
+  readonly zipcode: SmartTarget = {
+    locator: '//*[@id="zipcode"]',
+    prompt: 'Zipcode input field.',
   };
 
-  readonly mobile = {
-    primary: '//*[@id="mobile_number"]',
-    fallbacks: [
-      '#mobile_number',
-      'input[name="mobile_number"]',
-      'input[placeholder*="Mobile"]'
-    ]
+  readonly mobile: SmartTarget = {
+    locator: '//*[@id="mobile_number"]',
+    prompt: 'Mobile number input.',
   };
 
-  readonly createAccountBtn = {
-    primary: '//*[@id="form"]/div/div/div/div[1]/form/button',
-    fallbacks: [
-      'form >> text=Create Account',
-      'button:has-text("Create Account")',
-      'input[type="submit"]:has-text("Create")'
-    ]
+  readonly createAccountBtn: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div/div[1]/form/button',
+    prompt: 'Create Account submit button.',
   };
 
-  readonly accountCreatedHeader = {
-    primary: '//*[@id="form"]/div/div/div/h2/b',
-    fallbacks: [
-      'text=Account Created!',
-      'h2 b:has-text("Account Created")',
-      '.success-message:has-text("Created")'
-    ]
+  readonly accountCreatedHeader: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div/h2/b',
+    prompt: 'Success heading "Account Created!".',
   };
 
-  readonly continueBtn = {
-    primary: '//*[@id="form"]/div/div/div/div/a',
-    fallbacks: [
-      'text=Continue',
-      'a:has-text("Continue")',
-      'button:has-text("Continue")'
-    ]
+  readonly continueBtn: SmartTarget = {
+    locator: '//*[@id="form"]/div/div/div/div/a',
+    prompt: 'Continue link or button after account created.',
   };
 }
-
-

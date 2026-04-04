@@ -18,12 +18,12 @@ export class ProductsPage {
   }
 
   async addFirstTwoToCart() {
-    await this.page.locator(this.loc.firstCard.primary).scrollIntoViewIfNeeded();
-    await this.page.locator(this.loc.firstCard.primary).hover({ force: true });
+    await this.page.locator(this.loc.firstCard.locator).scrollIntoViewIfNeeded();
+    await this.page.locator(this.loc.firstCard.locator).hover({ force: true });
     await this.smart.click(this.loc.firstCardAddBtn);
     await this.smart.click(this.loc.cartModalContinue);
-    await this.page.locator(this.loc.secondCard.primary).scrollIntoViewIfNeeded();
-    await this.page.locator(this.loc.secondCard.primary).hover({ force: true });
+    await this.page.locator(this.loc.secondCard.locator).scrollIntoViewIfNeeded();
+    await this.page.locator(this.loc.secondCard.locator).hover({ force: true });
     await this.smart.click(this.loc.secondCardAddBtn);
   }
 
@@ -33,7 +33,7 @@ export class ProductsPage {
 
   async openFirstDetailsAndSetQuantity(quantity: number) {
     await this.smart.click(this.loc.viewFirstDetails);
-    await expect(this.page.locator(this.loc.detailsImage.primary)).toBeVisible();
+    await expect(this.page.locator(this.loc.detailsImage.locator)).toBeVisible();
     await this.smart.fill(this.loc.detailsQuantity, String(quantity));
     await this.smart.click(this.loc.detailsAddToCart);
   }

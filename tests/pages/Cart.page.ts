@@ -21,21 +21,24 @@ export class CartPage {
   }
 
   async removeFirstItem() {
-    await this.smart.click([this.loc.product1Delete, 'tr[id^="product-"] a.cart_quantity_delete i']);
+    await this.smart.click({
+      locator: this.loc.product1Delete,
+      prompt: 'Delete/remove icon for first cart row (cart quantity delete).',
+    });
   }
 
   async proceedToCheckout() {
-    await this.smart.click([
-      this.loc.proceedToCheckout,
-      'a:has-text("Proceed To Checkout")',
-      'a[href="/login"]:below(:text("Proceed To Checkout"))',
-    ]);
+    await this.smart.click({
+      locator: this.loc.proceedToCheckout,
+      prompt: 'Proceed To Checkout button or link in cart (#do_action area).',
+    });
   }
 
   async proceedThenChooseSignup() {
     await this.proceedToCheckout();
-    await this.smart.click([this.loc.checkoutModalSignupLink, '#checkoutModal a u']);
+    await this.smart.click({
+      locator: this.loc.checkoutModalSignupLink,
+      prompt: 'Signup link in checkout modal (#checkoutModal) when not logged in.',
+    });
   }
 }
-
-

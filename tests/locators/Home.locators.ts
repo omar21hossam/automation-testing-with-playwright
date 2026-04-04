@@ -1,101 +1,53 @@
+import type { SmartTarget } from '../utils/smartLocator';
+
 export class HomeLocators {
-  // Logo with fallbacks
-  readonly logo = {
-    primary: '//*[@id="header"]/div/div/div/div[1]/div/a/img',
-    fallbacks: [
-      'img[alt="Website for automation practice"]',
-      'img[src*="logo"]',
-      'header img'
-    ]
+  readonly logo: SmartTarget = {
+    locator: '//*[@id="header"]/div/div/div/div[1]/div/a/img',
+    prompt: 'Site logo image in the header (automation practice logo).',
   };
 
-  // Signup/Login link with fallbacks
-  readonly signupLoginLink = {
-    primary: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[4]/a',
-    fallbacks: [
-      'a[href="/login"]',
-      'text=Signup / Login',
-      'text=Login',
-      'header a:has-text("Login")'
-    ]
+  readonly signupLoginLink: SmartTarget = {
+    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[4]/a',
+    prompt: 'Header link "Signup / Login" to /login.',
   };
 
-  // Logout link with fallbacks
-  readonly logoutLink = {
-    primary: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[4]/a',
-    fallbacks: [
-      'a[href="/logout"]',
-      'text=Logout',
-      'header a:has-text("Logout")'
-    ]
+  readonly logoutLink: SmartTarget = {
+    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[4]/a',
+    prompt: 'Header "Logout" link when logged in.',
   };
 
-  // Cart link with fallbacks
-  readonly cartLink = {
-    primary: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[3]/a',
-    fallbacks: [
-      'a[href="/view_cart"]',
-      'text=Cart',
-      'header a:has-text("Cart")'
-    ]
+  readonly cartLink: SmartTarget = {
+    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[3]/a',
+    prompt: 'Header "Cart" link to view cart.',
   };
 
-  // Products link with fallbacks
-  readonly productsLink = {
-    primary: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[2]/a',
-    fallbacks: [
-      'a[href="/products"]',
-      'text=Products',
-      'header a:has-text("Products")'
-    ]
+  readonly productsLink: SmartTarget = {
+    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[2]/a',
+    prompt: 'Header "Products" link to /products.',
   };
 
-  // Test cases link with fallbacks
-  readonly testCasesLink = {
-    primary: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[5]/a',
-    fallbacks: [
-      'a[href="/test_cases"]',
-      'text=Test Cases',
-      'header a:has-text("Test Cases")'
-    ]
+  readonly testCasesLink: SmartTarget = {
+    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[5]/a',
+    prompt: 'Header "Test Cases" link.',
   };
 
-  // Subscription section with fallbacks
-  readonly subscriptionTitle = {
-    primary: '//*[@id="footer"]/div[1]/div/div/div[2]/div/h2',
-    fallbacks: [
-      'text=Subscription',
-      'footer h2:has-text("Subscription")',
-      'h2:has-text("Subscription")'
-    ]
+  readonly subscriptionTitle: SmartTarget = {
+    locator: '//*[@id="footer"]/div[1]/div/div/div[2]/div/h2',
+    prompt: 'Footer subscription section heading "Subscription".',
   };
 
-  readonly subscribeEmail = {
-    primary: '//*[@id="susbscribe_email"]',
-    fallbacks: [
-      '#susbscribe_email',
-      'input[placeholder*="email"]',
-      'input[type="email"]:below(:text("Subscription"))'
-    ]
+  readonly subscribeEmail: SmartTarget = {
+    locator: '//*[@id="susbscribe_email"]',
+    prompt: 'Footer email input for newsletter (id susbscribe_email).',
   };
 
-  readonly subscribeBtn = {
-    primary: '//*[@id="subscribe"]/i',
-    fallbacks: [
-      '#subscribe i',
-      'button:has-text("Subscribe")',
-      'input[type="submit"]:below(:text("Subscription"))'
-    ]
+  readonly subscribeBtn: SmartTarget = {
+    locator: '//*[@id="subscribe"]/i',
+    prompt: 'Footer subscribe button icon next to subscription email.',
   };
 
-  readonly subscribeSuccess = {
-    primary: '//*[@id="success-subscribe"]/div',
-    fallbacks: [
-      '#success-subscribe div',
-      'text=successfully subscribed',
-      '.alert-success:has-text("subscribed")'
-    ]
+  readonly subscribeSuccess: SmartTarget = {
+    locator: '//*[@id="success-subscribe"]/div',
+    prompt: 'Subscription success message container (successfully subscribed).',
   };
 }
-
-

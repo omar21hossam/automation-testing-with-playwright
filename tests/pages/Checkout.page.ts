@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import { CheckoutLocators } from '../locators/Checkout.locators';
-import { SmartLocator } from '../utils/smartLocator';
+import { SmartLocator, type SmartTarget } from '../utils/smartLocator';
 
 export class CheckoutPage {
   private readonly smart: SmartLocator;
@@ -15,21 +15,76 @@ export class CheckoutPage {
   }
 
   async placeOrderWithMessage(message: string) {
-    await this.smart.fill([this.loc.orderComment, '#ordermsg textarea'], message);
-    await this.smart.click([this.loc.placeOrder, 'a:has-text("Place Order")']);
-    await this.smart.expectText([this.loc.paymentHeader, 'text=Payment'], 'Payment');
+    const orderComment: SmartTarget = {
+      locator: this.loc.orderComment,
+      prompt: 'Order comment textarea in #ordermsg on checkout.',
+    };
+    const placeOrder: SmartTarget = {
+      locator: this.loc.placeOrder,
+      prompt: 'Place Order link or button leading to payment.',
+    };
+    const paymentHeader: SmartTarget = {
+      locator: this.loc.paymentHeader,
+      prompt: 'Payment page heading "Payment".',
+    };
+    await this.smart.fill(orderComment, message);
+    await this.smart.click(placeOrder);
+    await this.smart.expectText(paymentHeader, 'Payment');
   }
 
-  async pay(data: { nameOnCard: string; cardNumber: string; cvc: string; expirationMonth: string; expirationYear: string; }) {
-    await this.smart.fill([this.loc.nameOnCard, '#payment-form input[name="name_on_card"]'], data.nameOnCard);
-    await this.smart.fill([this.loc.cardNumber, '#payment-form input[name="card_number"]'], data.cardNumber);
-    await this.smart.fill([this.loc.cvc, '#payment-form input[name="cvc"]'], data.cvc);
-    await this.smart.fill([this.loc.expiryMonth, '#payment-form input[name="expiry_month"]'], data.expirationMonth);
-    await this.smart.fill([this.loc.expiryYear, '#payment-form input[name="expiry_year"]'], data.expirationYear);
-    await this.smart.click([this.loc.payAndConfirm, '#submit']);
-    await this.smart.expectText([this.loc.orderPlaced, 'text=Order Placed!'], 'Order Placed!');
-    await this.smart.click([this.loc.continueBtn, 'text=Continue']);
+  async pay(data: {
+    nameOnCard: string;
+    cardNumber: string;
+    cvc: string;
+    expirationMonth: string;
+    expirationYear: string;
+  }) {
+    const fields: SmartTarget[] = [
+      {
+        locator: this.loc.nameOnCard,
+        prompt: 'Name on card input in payment form.',
+      },
+      {
+        locator: this.loc.cardNumber,
+        prompt: 'Card number input in payment form.',
+      },
+      {
+        locator: this.loc.cvc,
+        prompt: 'CVC input in payment form.',
+      },
+      {
+        locator: this.loc.expiryMonth,
+        prompt: 'Expiry month input in payment form.',
+      },
+      {
+        locator: this.loc.expiryYear,
+        prompt: 'Expiry year input in payment form.',
+      },
+    ];
+    const values = [
+      data.nameOnCard,
+      data.cardNumber,
+      data.cvc,
+      data.expirationMonth,
+      data.expirationYear,
+    ];
+    for (let i = 0; i < fields.length; i++) {
+      await this.smart.fill(fields[i], values[i]);
+    }
+    await this.smart.click({
+      locator: this.loc.payAndConfirm,
+      prompt: 'Pay and Confirm Order submit button #submit.',
+    });
+    await this.smart.expectText(
+      {
+        locator: this.loc.orderPlaced,
+        prompt: 'Order placed success heading "Order Placed!".',
+      },
+      'Order Placed!',
+    );
+    await this.smart.click({
+      locator: this.loc.continueBtn,
+      prompt: 'Continue button after order placed.',
+    });
   }
 }
-
-

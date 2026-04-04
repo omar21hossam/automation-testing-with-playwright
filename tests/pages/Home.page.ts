@@ -50,12 +50,8 @@ export class HomePage {
   async openContact() {
     logger.pageAction('HomePage', 'openContact');
     await this.smart.click({
-      primary: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[8]/a',
-      fallbacks: [
-        'a[href="/contact_us"]',
-        'text=Contact us',
-        'header a:has-text("Contact")'
-      ]
+      locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[8]/a',
+      prompt: 'Header "Contact us" link to /contact_us.',
     });
     logger.pageAction('HomePage', 'openContact', { status: 'success' });
   }

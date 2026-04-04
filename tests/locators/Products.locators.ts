@@ -1,159 +1,88 @@
+import type { SmartTarget } from '../utils/smartLocator';
+
 export class ProductsLocators {
-  readonly pageHeader = {
-    primary: 'xpath=/html/body/section[2]/div/div/div[2]/div/h2',
-    fallbacks: [
-      'text=All Products',
-      'h2:has-text("All Products")',
-      'section h2:has-text("Products")'
-    ]
+  readonly pageHeader: SmartTarget = {
+    locator: 'xpath=/html/body/section[2]/div/div/div[2]/div/h2',
+    prompt: 'Products page heading "All Products".',
   };
 
-  readonly searchInput = {
-    primary: 'xpath=/html/body/section[1]/div/input',
-    fallbacks: [
-      'input#search_product',
-      'input[placeholder*="search"]',
-      'input[type="text"]:below(:text("Search"))'
-    ]
+  readonly searchInput: SmartTarget = {
+    locator: 'xpath=/html/body/section[1]/div/input',
+    prompt: 'Product search text input above the product list.',
   };
 
-  readonly searchButton = {
-    primary: 'xpath=/html/body/section[1]/div/button',
-    fallbacks: [
-      'button#submit_search',
-      'button:has-text("Search")',
-      'input[type="submit"]:below(:text("Search"))'
-    ]
+  readonly searchButton: SmartTarget = {
+    locator: 'xpath=/html/body/section[1]/div/button',
+    prompt: 'Search submit button next to search input.',
   };
 
-  // Product cards with fallbacks
-  readonly firstCard = {
-    primary: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[2]/div/div[1]',
-    fallbacks: [
-      '.productinfo:first-of-type',
-      '.single-products:first-of-type',
-      'div[class*="product"]:first-of-type'
-    ]
+  readonly firstCard: SmartTarget = {
+    locator: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[2]/div/div[1]',
+    prompt: 'First product card container in the products grid.',
   };
 
-  readonly firstCardName = {
-    primary: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[2]/div/div[1]/div[1]/p',
-    fallbacks: [
-      '.productinfo p:first-of-type',
-      '.single-products p:first-of-type',
-      'div[class*="product"] p:first-of-type'
-    ]
+  readonly firstCardName: SmartTarget = {
+    locator: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[2]/div/div[1]/div[1]/p',
+    prompt: 'Product name text on the first product card.',
   };
 
-  readonly firstCardAddBtn = {
-    primary: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[2]/div/div[1]/div[2]/div/a',
-    fallbacks: [
-      'div.productinfo a.add-to-cart',
-      'a:has-text("Add to cart")',
-      '.single-products a:has-text("Add")'
-    ]
+  readonly firstCardAddBtn: SmartTarget = {
+    locator: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[2]/div/div[1]/div[2]/div/a',
+    prompt: 'Add to cart link on the first product card.',
   };
 
-  readonly secondCard = {
-    primary: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[3]/div/div[1]',
-    fallbacks: [
-      '.productinfo:nth-of-type(2)',
-      '.single-products:nth-of-type(2)',
-      'div[class*="product"]:nth-of-type(2)'
-    ]
+  readonly secondCard: SmartTarget = {
+    locator: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[3]/div/div[1]',
+    prompt: 'Second product card container in the grid.',
   };
 
-  readonly secondCardName = {
-    primary: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[3]/div/div[1]/div[1]/p',
-    fallbacks: [
-      '.productinfo:nth-of-type(2) p',
-      '.single-products:nth-of-type(2) p',
-      'div[class*="product"]:nth-of-type(2) p'
-    ]
+  readonly secondCardName: SmartTarget = {
+    locator: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[3]/div/div[1]/div[1]/p',
+    prompt: 'Product name on the second product card.',
   };
 
-  readonly secondCardAddBtn = {
-    primary: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[3]/div/div[1]/div[2]/div/a',
-    fallbacks: [
-      '.productinfo:nth-of-type(2) a.add-to-cart',
-      'a:has-text("Add to cart")',
-      '.single-products:nth-of-type(2) a:has-text("Add")'
-    ]
+  readonly secondCardAddBtn: SmartTarget = {
+    locator: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[3]/div/div[1]/div[2]/div/a',
+    prompt: 'Add to cart link on the second product card.',
   };
 
-  // Product details with fallbacks
-  readonly viewFirstDetails = {
-    primary: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[2]/div/div[2]/ul/li/a',
-    fallbacks: [
-      'a:has-text("View Product")',
-      '.productinfo a:has-text("View")',
-      'a[href*="product_details"]'
-    ]
+  readonly viewFirstDetails: SmartTarget = {
+    locator: 'xpath=/html/body/section[2]/div/div/div[2]/div/div[2]/div/div[2]/ul/li/a',
+    prompt: 'View Product link on the first product card.',
   };
 
-  readonly detailsImage = {
-    primary: 'xpath=/html/body/section/div/div/div[2]/div[2]/div[1]/div/img',
-    fallbacks: [
-      '.product-image img',
-      'img[src*="product"]',
-      '.product-details img'
-    ]
+  readonly detailsImage: SmartTarget = {
+    locator: 'xpath=/html/body/section/div/div/div[2]/div[2]/div[1]/div/img',
+    prompt: 'Main product image on product details page.',
   };
 
-  readonly detailsTitle = {
-    primary: 'xpath=/html/body/section/div/div/div[2]/div[2]/div[2]/div/h2',
-    fallbacks: [
-      '.product-details h2',
-      'h2:has-text("Blue Top")',
-      '.product-information h2'
-    ]
+  readonly detailsTitle: SmartTarget = {
+    locator: 'xpath=/html/body/section/div/div/div[2]/div[2]/div[2]/div/h2',
+    prompt: 'Product title heading on details page.',
   };
 
-  readonly detailsPrice = {
-    primary: 'xpath=/html/body/section/div/div/div[2]/div[2]/div[2]/div/span/span',
-    fallbacks: [
-      '.product-details span span',
-      'span:has-text("Rs.")',
-      '.price'
-    ]
+  readonly detailsPrice: SmartTarget = {
+    locator: 'xpath=/html/body/section/div/div/div[2]/div[2]/div[2]/div/span/span',
+    prompt: 'Product price (Rs.) on details page.',
   };
 
-  readonly detailsQuantity = {
-    primary: '//*[@id="quantity"]',
-    fallbacks: [
-      '#quantity',
-      'input[name="quantity"]',
-      'input[type="number"]:below(:text("Quantity"))'
-    ]
+  readonly detailsQuantity: SmartTarget = {
+    locator: '//*[@id="quantity"]',
+    prompt: 'Quantity input on product details.',
   };
 
-  readonly detailsAddToCart = {
-    primary: 'xpath=/html/body/section/div/div/div[2]/div[2]/div[2]/div/span/button',
-    fallbacks: [
-      'button:has-text("Add to cart")',
-      'input[type="submit"]:has-text("Add")',
-      '.product-details button'
-    ]
+  readonly detailsAddToCart: SmartTarget = {
+    locator: 'xpath=/html/body/section/div/div/div[2]/div[2]/div[2]/div/span/button',
+    prompt: 'Add to cart button on product details page.',
   };
 
-  // Modal with fallbacks
-  readonly cartModalContinue = {
-    primary: 'xpath=//*[@id="cartModal"]/div/div/div[3]/button',
-    fallbacks: [
-      'div#cartModal button.close-modal',
-      'text=Continue Shopping',
-      '.modal button:has-text("Continue")'
-    ]
+  readonly cartModalContinue: SmartTarget = {
+    locator: 'xpath=//*[@id="cartModal"]/div/div/div[3]/button',
+    prompt: 'Cart modal "Continue Shopping" close button.',
   };
 
-  readonly cartModalViewCart = {
-    primary: 'xpath=//*[@id="cartModal"]/div/div/div[2]/p[2]/a/u',
-    fallbacks: [
-      'div#cartModal a:has-text("View Cart")',
-      'a:has-text("View Cart")',
-      '.modal a:has-text("View")'
-    ]
+  readonly cartModalViewCart: SmartTarget = {
+    locator: 'xpath=//*[@id="cartModal"]/div/div/div[2]/p[2]/a/u',
+    prompt: 'Cart modal "View Cart" link.',
   };
 }
-
-

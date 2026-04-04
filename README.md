@@ -5,7 +5,7 @@ A professional-grade test automation framework for e-commerce websites using Pla
 ## 🚀 Features
 
 - **Page Object Model (POM)**: Clean separation of locators, page objects, and test logic
-- **Smart Locator Healing**: AI-like fallback selectors for improved test reliability
+- **Smart Locator Healing**: One Playwright selector per element; if it fails, an optional LLM-backed “healer” uses your prompt plus a DOM snapshot to propose a new selector
 - **Parallel Test Execution**: Tests run in parallel across multiple browsers
 - **Comprehensive Test Coverage**: Authentication, product management, cart operations, checkout flows
 - **Ad Blocking**: Built-in ad blocking to reduce test flakiness
@@ -35,12 +35,14 @@ tests/
 ├── data/
 │   └── testData.ts          # Centralized test data
 ├── utils/
-│   └── smartLocator.ts      # Smart locator utility with fallbacks
+│   ├── smartLocator.ts      # Smart locator + optional DOM healing (LLM)
+│   └── logger.ts            # Structured test logging
 ├── auth.spec.ts             # Authentication tests
 ├── contact.spec.ts          # Contact form tests
-├── products_cart.spec.ts    # Product and cart tests
-└── automation_ex.spec.ts    # Original test suite (legacy)
+└── products_cart.spec.ts    # Product and cart tests
 ```
+
+Project root also includes `.env` (gitignored) for API keys used by healing—see [Smart Locator System](#smart-locator-system).
 
 ## 🛠️ Installation
 
@@ -59,6 +61,13 @@ tests/
    ```bash
    npx playwright install
    ```
+
+4. **Environment (optional, for smart locator healing)**  
+   Copy or create a `.env` file in the project root and set your OpenAI-compatible API key:
+   ```bash
+   OPENAI_API_KEY=sk-...
+   ```
+   Healing is skipped if the key is missing or `SMART_LOCATOR_HEAL=false`. See the Smart Locator section below for other variables.
 
 ## 🧪 Running Tests
 
@@ -141,20 +150,51 @@ Centralized test data including:
 - Payment details
 - Address information
 
+### Environment variables (`.env`)
+
+Loaded via `dotenv` in `playwright.config.ts` and `tests/utils/smartLocator.ts`.
+
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` | Required for built-in healing (OpenAI-compatible Chat Completions API). |
+| `OPENAI_API_URL` | Optional. Default: `https://api.openai.com/v1/chat/completions` (use for Azure or other bases). |
+| `OPENAI_MODEL` | Optional. Default: `gpt-4o-mini`. |
+| `SMART_LOCATOR_HEAL` | Set to `false` to disable healing while keeping a key in the environment. |
+
 ## 🧠 Smart Locator System
 
-The framework includes a smart locator utility that provides fallback selectors for improved reliability:
+Locators used through `SmartLocator` are **`SmartTarget`** objects: a single Playwright **`locator`** string and a **`prompt`** that describes the element for the healer if the locator times out.
+
+**Flow:** wait for the locator to be visible (short timeout) → on failure, optionally call the model with the prompt, the failed selector, and an accessibility snapshot (with HTML fallback) → if the model returns `{"selector":"..."}`, wait for that locator instead.
+
+**Define locators** (see `tests/locators/*.locators.ts`):
 
 ```typescript
-// Example usage in page objects
-await this.smart.click([
-  this.loc.primaryButton,
-  'button:has-text("Submit")',
-  'input[type="submit"]'
-]);
+import type { SmartTarget } from '../utils/smartLocator';
+
+readonly loginButton: SmartTarget = {
+  locator: '//*[@id="form"]/div/div/div[1]/div/form/button',
+  prompt: 'Login submit button on the login form (e.g. text "Login").',
+};
 ```
 
-This approach ensures tests continue to work even when UI elements change, providing "AI-like" locator healing.
+**Use in page objects:**
+
+```typescript
+await this.smart.click(this.loc.loginButton);
+await this.smart.fill(this.loc.loginEmail, email);
+```
+
+**Inline target** (e.g. one-off actions):
+
+```typescript
+await this.smart.click({
+  locator: '//*[@id="header"]/.../a',
+  prompt: 'Header "Contact us" link to /contact_us.',
+});
+```
+
+You can inject a custom `healProvider` via `new SmartLocator(page, { healProvider })` if you need a non-OpenAI backend. Without `OPENAI_API_KEY` and without a custom provider, healing is skipped and the test fails with the usual Playwright error.
 
 ## 🚫 Ad Blocking
 
@@ -165,7 +205,7 @@ Built-in ad blocking reduces test flakiness by:
 
 ## 📝 Writing New Tests
 
-1. **Create locators** in `tests/locators/`
+1. **Create locators** in `tests/locators/` as `SmartTarget` (`locator` + `prompt`) where you use `SmartLocator`
 2. **Implement page actions** in `tests/pages/`
 3. **Write test cases** using the base fixture
 4. **Add test data** to `tests/data/testData.ts`
@@ -253,7 +293,7 @@ This project is licensed under the ISC License.
 ### Common Issues
 
 1. **Tests timing out**: Increase timeout values in `playwright.config.ts`
-2. **Element not found**: Check if selectors need updating or add fallback selectors
+2. **Element not found**: Update the `locator` string, improve the `prompt` for healing, or run with `OPENAI_API_KEY` set so the healer can suggest a new selector
 3. **Flaky tests**: Enable ad blocking and increase wait times
 4. **Browser crashes**: Ensure browsers are properly installed with `npx playwright install`
 
