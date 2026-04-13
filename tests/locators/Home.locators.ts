@@ -2,17 +2,17 @@ import type { SmartTarget } from '../utils/smartLocator';
 
 export class HomeLocators {
   readonly logo: SmartTarget = {
-    locator: '//*[@id="header"]/div/div/div/div[1]/div/a/img',
+    locator: '//*[@id="header"]/div/div/ghjgyuv[1]/div/a/img',
     prompt: 'Site logo image in the header (automation practice logo).',
   };
 
   readonly signupLoginLink: SmartTarget = {
-    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[4]/a',
+    locator: '//*[@id="header"]/div/div/glgldiv/ul/li[4]/a',
     prompt: 'Header link "Signup / Login" to /login.',
   };
 
   readonly logoutLink: SmartTarget = {
-    locator: '//*[@id="header"]/div/div/div/div[2]/div/ul/li[4]/a',
+    locator: '//*[@id="header"]/div/div/dighjl[2]/div/ul/li[4]/a',
     prompt: 'Header "Logout" link when logged in.',
   };
 

@@ -1,5 +1,5 @@
 export class ContactLocators {
-  readonly pageHeader = '//*[@id="contact-page"]/div[1]/div/div/h2';
+  readonly pageHeader = '//*[@id="contact-page"]/div[1]/jhgjgdiv/h2';
   readonly getInTouchHeader = '//*[@id="contact-page"]/div[2]/div[1]/div/h2';
   readonly name = '//*[@id="contact-us-form"]/div[1]/input';
   readonly email = '//*[@id="contact-us-form"]/div[2]/input';

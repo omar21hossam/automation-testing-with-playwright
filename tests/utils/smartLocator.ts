@@ -1,9 +1,7 @@
-import path from 'path';
-import dotenv from 'dotenv';
 import { Page, Locator, expect } from '@playwright/test';
 import { logger } from './logger';
-
-dotenv.config({ path: path.resolve(process.cwd(), '.env'), quiet: true });
+import { callAiProvider } from './aiClients';
+import { resolveAiProvider } from './aiConfig';
 
 /** Single Playwright selector plus an LLM prompt used if that selector fails */
 export type SmartTarget = {
@@ -26,12 +24,22 @@ export type SmartLocatorOptions = {
   healProvider?: HealProvider;
   maxDomChars?: number;
   healWaitTimeoutMs?: number;
+  healMaxCandidates?: number;
+  healRetryTimeoutMs?: number;
 };
 
 function envHealEnabled(): boolean {
   const v = process.env.SMART_LOCATOR_HEAL?.toLowerCase();
   if (v === 'false' || v === '0') return false;
   return true;
+}
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
 }
 
 async function captureDomSummary(page: Page, maxChars: number): Promise<string> {
@@ -72,23 +80,93 @@ function parseSelectorFromModelText(text: string): string | null {
   if (direct) return direct;
   const objMatch = raw.match(/\{[\s\S]*"selector"[\s\S]*\}/);
   if (objMatch) return tryParse(objMatch[0]);
+  // Fallback: if model returned a plain selector string.
+  if (raw && !raw.includes('{') && !raw.includes('}')) {
+    return raw.trim();
+  }
   return null;
 }
 
-async function defaultOpenAiHeal(ctx: HealingContext): Promise<string | null> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) {
-    logger.warn('LOCATOR', 'Healing skipped: OPENAI_API_KEY is not set');
-    return null;
+function normalizeSelector(selector: string): string {
+  let s = selector.trim();
+  // Strip wrapping quotes if model returns '"text=foo"'
+  if (
+    (s.startsWith('"') && s.endsWith('"')) ||
+    (s.startsWith("'") && s.endsWith("'"))
+  ) {
+    s = s.slice(1, -1).trim();
   }
-  const url = process.env.OPENAI_API_URL ?? 'https://api.openai.com/v1/chat/completions';
-  const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+  // Unwrap locator('...') / page.locator('...')
+  const locatorWrap = s.match(/^(?:page\.)?locator\((['"])([\s\S]+)\1\)$/);
+  if (locatorWrap) {
+    s = locatorWrap[2].trim();
+  }
+  // Convert getByRole('button', { name: 'Login' }) to role=button[name="Login"]
+  const getByRole = s.match(
+    /^(?:page\.)?getByRole\(\s*['"]([^'"]+)['"]\s*,\s*\{\s*name\s*:\s*['"]([^'"]+)['"]\s*\}\s*\)$/,
+  );
+  if (getByRole) {
+    const role = getByRole[1];
+    const name = getByRole[2].replace(/"/g, '\\"');
+    return `role=${role}[name="${name}"]`;
+  }
+  // Convert getByText('Signup / Login') to text=Signup / Login
+  const getByText = s.match(/^(?:page\.)?getByText\(\s*['"]([\s\S]+)['"]\s*\)$/);
+  if (getByText) {
+    return `text=${getByText[1]}`;
+  }
+  return s;
+}
+
+function isSelectorSyntaxLikelyValid(selector: string): boolean {
+  // Reject obvious code snippets instead of locator strings.
+  if (/[{};]/.test(selector) && !selector.startsWith('xpath=')) return false;
+  if (selector.startsWith('getBy') || selector.startsWith('page.')) return false;
+  return selector.length > 0;
+}
+
+function extractAccessibleName(selector: string): string | null {
+  const m = selector.match(/\[name="([^"]+)"\]/);
+  return m?.[1] ?? null;
+}
+
+function buildHealedCandidates(selector: string, prompt: string): string[] {
+  const out: string[] = [];
+  const add = (s: string | null | undefined) => {
+    const v = s?.trim();
+    if (!v) return;
+    if (!out.includes(v)) out.push(v);
+  };
+
+  add(selector);
+
+  // If model guessed an invalid role like role=text[name="..."], try text-based fallback.
+  if (selector.startsWith('role=text')) {
+    const name = extractAccessibleName(selector);
+    if (name) add(`text=${name}`);
+  }
+
+  // If selector contains a named role, text can still be a pragmatic backup.
+  const roleName = extractAccessibleName(selector);
+  if (roleName) add(`text=${roleName}`);
+
+  // Use prompt as a weak fallback: quoted text usually contains human-visible anchor.
+  const quotedPrompt = prompt.match(/"([^"]{3,80})"/)?.[1];
+  if (quotedPrompt) add(`text=${quotedPrompt}`);
+
+  return out;
+}
+
+async function defaultProviderHeal(ctx: HealingContext): Promise<string | null> {
+  const provider = resolveAiProvider();
   const system = [
     'You are a senior QA automation engineer using Playwright.',
     'Given the page accessibility/DOM excerpt and a failed selector, reply with ONLY a JSON object:',
     '{"selector":"<one valid Playwright selector>"}',
     'Rules:',
-    '- Prefer role+name, text=, getByRole, css, or xpath= when needed.',
+    '- Return a selector STRING compatible with page.locator(selector).',
+    '- Valid styles include: text=..., role=button[name="..."], css=..., xpath=..., #id, .class.',
+    '- DO NOT return Playwright code expressions (no getByRole(...), no page.locator(...), no JS).',
     '- The selector must match exactly one element that satisfies the user prompt.',
     '- No markdown, no commentary outside the JSON.',
   ].join('\n');
@@ -100,41 +178,34 @@ async function defaultOpenAiHeal(ctx: HealingContext): Promise<string | null> {
     ctx.domSummary,
   ].join('\n\n');
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.1,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    logger.error('LOCATOR', `Healing API error: ${res.status}`, { body: errText.slice(0, 500) });
-    return null;
-  }
-
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const content = data.choices?.[0]?.message?.content;
+  const content = await callAiProvider(provider, [
+    { role: 'system', content: system },
+    { role: 'user', content: user },
+  ]);
   if (!content) {
-    logger.warn('LOCATOR', 'Healing API returned no content');
+    logger.warn('LOCATOR', `Healing API returned no content (${provider})`);
     return null;
   }
-  return parseSelectorFromModelText(content);
+  const parsed = parseSelectorFromModelText(content);
+  if (!parsed) return null;
+  const normalized = normalizeSelector(parsed);
+  if (!isSelectorSyntaxLikelyValid(normalized)) {
+    logger.warn('LOCATOR', 'Healer returned non-locator syntax', {
+      raw: parsed,
+      normalized,
+    });
+    return null;
+  }
+  return normalized;
 }
 
 export class SmartLocator {
-  private readonly opts: Required<Pick<SmartLocatorOptions, 'maxDomChars' | 'healWaitTimeoutMs'>> &
+  private readonly opts: Required<
+    Pick<
+      SmartLocatorOptions,
+      'maxDomChars' | 'healWaitTimeoutMs' | 'healMaxCandidates' | 'healRetryTimeoutMs'
+    >
+  > &
     SmartLocatorOptions;
 
   constructor(
@@ -144,8 +215,12 @@ export class SmartLocator {
     this.opts = {
       heal: options.heal,
       healProvider: options.healProvider,
-      maxDomChars: options.maxDomChars ?? 14000,
+      maxDomChars: options.maxDomChars ?? readPositiveIntEnv('SMART_LOCATOR_HEAL_MAX_DOM_CHARS', 14000),
       healWaitTimeoutMs: options.healWaitTimeoutMs ?? 8000,
+      healMaxCandidates:
+        options.healMaxCandidates ?? readPositiveIntEnv('SMART_LOCATOR_HEAL_MAX_CANDIDATES', 3),
+      healRetryTimeoutMs:
+        options.healRetryTimeoutMs ?? readPositiveIntEnv('SMART_LOCATOR_HEAL_RETRY_TIMEOUT_MS', 3000),
     };
   }
 
@@ -158,12 +233,6 @@ export class SmartLocator {
 
   private async healAndResolveLocator(failedSelector: string, prompt: string): Promise<Locator | null> {
     if (!this.healingEnabled()) return null;
-
-    const usingBuiltin = !this.opts.healProvider;
-    if (usingBuiltin && !process.env.OPENAI_API_KEY) {
-      logger.debug('LOCATOR', 'Healing skipped: set OPENAI_API_KEY or pass healProvider');
-      return null;
-    }
 
     const maxChars = this.opts.maxDomChars ?? 14000;
     const domSummary = await captureDomSummary(this.page, maxChars);
@@ -179,7 +248,7 @@ export class SmartLocator {
       failedSelector,
     });
 
-    const provider = this.opts.healProvider ?? defaultOpenAiHeal;
+    const provider = this.opts.healProvider ?? defaultProviderHeal;
     let selector: string | null = null;
     try {
       selector = await provider(ctx);
@@ -195,23 +264,31 @@ export class SmartLocator {
       return null;
     }
 
-    logger.info('LOCATOR', 'Healer proposed selector', { selector });
+    const allCandidates = buildHealedCandidates(selector, prompt);
+    const candidates = allCandidates.slice(0, this.opts.healMaxCandidates);
+    logger.info('LOCATOR', 'Healer proposed selector candidates', {
+      primary: selector,
+      candidates,
+      truncated: allCandidates.length > candidates.length,
+    });
 
-    const loc = this.page.locator(selector).first();
-    try {
-      await loc.waitFor({
-        state: 'visible',
-        timeout: this.opts.healWaitTimeoutMs ?? 8000,
-      });
-      logger.locatorResolved(failedSelector, selector, true);
-      return loc;
-    } catch (error) {
-      logger.warn('LOCATOR', 'Healed selector did not become visible in time', {
-        selector,
-        message: error instanceof Error ? error.message : String(error),
-      });
-      return null;
+    for (const candidate of candidates) {
+      const loc = this.page.locator(candidate).first();
+      try {
+        await loc.waitFor({
+          state: 'visible',
+          timeout: this.opts.healRetryTimeoutMs,
+        });
+        logger.locatorResolved(failedSelector, candidate, true);
+        return loc;
+      } catch (error) {
+        logger.warn('LOCATOR', 'Healed selector candidate failed', {
+          selector: candidate,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
+    return null;
   }
 
   private async resolve(target: SmartTarget): Promise<Locator> {

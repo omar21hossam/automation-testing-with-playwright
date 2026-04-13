@@ -1,11 +1,11 @@
 export class CheckoutLocators {
-  readonly address1 = '//*[@id="address_delivery"]/li[4]';
+  readonly address1 = '//*[@id="address_delivery"]/ghjhj[4]';
   readonly address2 = '//*[@id="address_delivery"]/li[5]';
   readonly orderComment = '//*[@id="ordermsg"]/textarea';
   readonly placeOrder = '//*[@id="cart_items"]/div/div[7]/a';
   readonly paymentHeader = '//*[@id="cart_items"]/div/div[2]/h2';
   readonly nameOnCard = '//*[@id="payment-form"]/div[1]/div/input';
-  readonly cardNumber = '//*[@id="payment-form"]/div[2]/div/input';
+  readonly cardNumber = '//*[@id="payment-form"]/dighjghj/div/input';
   readonly cvc = '//*[@id="payment-form"]/div[3]/div[1]/input';
   readonly expiryMonth = '//*[@id="payment-form"]/div[3]/div[2]/input';
   readonly expiryYear = '//*[@id="payment-form"]/div[3]/div[3]/input';

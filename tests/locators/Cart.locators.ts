@@ -1,5 +1,5 @@
 export class CartLocators {
-  readonly product1Name = '//*[@id="product-1"]/td[2]/h4/a';
+  readonly product1Name = '//*[@id="product-1"]/tdgjhghjg/a';
   readonly product1Price = '//*[@id="product-1"]/td[3]/p';
   readonly product1Qty = '//*[@id="product-1"]/td[4]/button';
   readonly product1Delete = '//*[@id="product-1"]/td[6]/a/i';
