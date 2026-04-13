@@ -38,7 +38,7 @@ tests/
 ├── utils/
 │   ├── smartLocator.ts      # Smart locator + robust healing/retry pipeline
 │   ├── aiConfig.ts          # Provider/model/api-key resolution + API error helpers
-│   ├── aiClients.ts         # Provider callers (openai/openrouter, gemini, grok/groq)
+│   ├── aiClients.ts         # Provider callers (openai/openrouter, gemini, groq)
 │   └── logger.ts            # Structured test logging
 ├── auth.spec.ts             # Authentication tests
 ├── contact.spec.ts          # Contact form tests
@@ -167,7 +167,7 @@ Loaded via `dotenv` in `playwright.config.ts` and `tests/utils/aiConfig.ts`.
 
 | Variable | Purpose |
 |----------|---------|
-| `LLM_PROVIDER` | Active healer backend: `openai`, `gemini`, or `grok`. |
+| `LLM_PROVIDER` | Active healer backend: `openai`, `gemini`, or `groq`. |
 | `SMART_LOCATOR_HEAL` | Set to `false` to disable healing. |
 
 #### OpenAI/OpenRouter (OpenAI-compatible)
@@ -186,13 +186,13 @@ Loaded via `dotenv` in `playwright.config.ts` and `tests/utils/aiConfig.ts`.
 | `GEMINI_API_URL` | Base URL for Gemini models API. |
 | `GEMINI_MODEL` | Gemini model id (e.g. `gemini-1.5-flash`). |
 
-#### Grok/Groq
+#### Groq
 
 | Variable | Purpose |
 |----------|---------|
-| `GROK_API_KEY` | Key used by the configured Grok/Groq-compatible endpoint. |
-| `GROK_API_URL` | Chat completions URL (for xAI or Groq-compatible endpoint). |
-| `GROK_MODEL` | Model id (e.g. `grok-2-latest` or Groq-served model). |
+| `GROQ_API_KEY` | Key used by the configured Groq endpoint. |
+| `GROQ_API_URL` | Chat completions URL for Groq-compatible endpoint. |
+| `GROQ_MODEL` | Model id served by Groq (e.g. `llama-3.3-70b-versatile`). |
 
 #### Healing tuning knobs
 

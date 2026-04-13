@@ -31,8 +31,8 @@ async function callOpenAi(messages: ChatMessage[]): Promise<string | null> {
   return data.choices?.[0]?.message?.content ?? null;
 }
 
-async function callGrok(messages: ChatMessage[]): Promise<string | null> {
-  const cfg = resolveProviderConfig('grok');
+async function callGroq(messages: ChatMessage[]): Promise<string | null> {
+  const cfg = resolveProviderConfig('groq');
   if (!cfg) return null;
 
   const res = await fetch(cfg.apiUrl, {
@@ -49,7 +49,7 @@ async function callGrok(messages: ChatMessage[]): Promise<string | null> {
   });
 
   if (!res.ok) {
-    await handleApiError(res, 'grok');
+    await handleApiError(res, 'groq');
     return null;
   }
   const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
@@ -95,7 +95,7 @@ export async function callAiProvider(
   try {
     if (provider === 'openai') return await callOpenAi(messages);
     if (provider === 'gemini') return await callGemini(messages);
-    return await callGrok(messages);
+    return await callGroq(messages);
   } catch (error) {
     logger.error('AI_PROVIDER', `Unhandled ${provider} client error`, {
       provider,

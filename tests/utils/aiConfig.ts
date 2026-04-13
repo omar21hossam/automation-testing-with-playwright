@@ -4,7 +4,7 @@ import { logger } from './logger';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env'), quiet: true });
 
-export type AiProvider = 'openai' | 'gemini' | 'grok';
+export type AiProvider = 'openai' | 'gemini' | 'groq';
 
 export type ProviderConfig = {
   provider: AiProvider;
@@ -28,9 +28,9 @@ const PROVIDER_DEFAULTS: Record<AiProvider, { model: string; apiUrl: string }> =
     model: 'gemini-1.5-flash',
     apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
   },
-  grok: {
-    model: 'grok-2-latest',
-    apiUrl: 'https://api.x.ai/v1/chat/completions',
+  groq: {
+    model: 'llama-3.3-70b-versatile',
+    apiUrl: 'https://api.groq.com/openai/v1/chat/completions',
   },
 };
 
@@ -50,15 +50,15 @@ function readProviderEnv(provider: AiProvider): ProviderEnvMap {
     };
   }
   return {
-    model: process.env.GROK_MODEL,
-    apiUrl: process.env.GROK_API_URL,
-    apiKey: process.env.GROK_API_KEY,
+    model: process.env.GROQ_MODEL,
+    apiUrl: process.env.GROQ_API_URL,
+    apiKey: process.env.GROQ_API_KEY,
   };
 }
 
 export function resolveAiProvider(): AiProvider {
   const raw = (process.env.LLM_PROVIDER ?? 'openai').toLowerCase();
-  if (raw === 'openai' || raw === 'gemini' || raw === 'grok') {
+  if (raw === 'openai' || raw === 'gemini' || raw === 'groq') {
     return raw;
   }
   logger.warn('AI_CONFIG', 'Invalid LLM_PROVIDER value, defaulting to openai', { value: raw });
