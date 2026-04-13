@@ -5,7 +5,8 @@ A professional-grade test automation framework for e-commerce websites using Pla
 ## 🚀 Features
 
 - **Page Object Model (POM)**: Clean separation of locators, page objects, and test logic
-- **Smart Locator Healing**: One Playwright selector per element; if it fails, an optional LLM-backed “healer” uses your prompt plus a DOM snapshot to propose a new selector
+- **Smart Locator Healing**: One Playwright selector per element; if it fails, an optional LLM-backed healer uses your prompt + DOM snapshot and retries multiple healed candidates
+- **Multi-Provider AI Support**: OpenRouter/OpenAI-compatible, Gemini, and Groq/Grok routing via env-based provider config
 - **Parallel Test Execution**: Tests run in parallel across multiple browsers
 - **Comprehensive Test Coverage**: Authentication, product management, cart operations, checkout flows
 - **Ad Blocking**: Built-in ad blocking to reduce test flakiness
@@ -35,7 +36,9 @@ tests/
 ├── data/
 │   └── testData.ts          # Centralized test data
 ├── utils/
-│   ├── smartLocator.ts      # Smart locator + optional DOM healing (LLM)
+│   ├── smartLocator.ts      # Smart locator + robust healing/retry pipeline
+│   ├── aiConfig.ts          # Provider/model/api-key resolution + API error helpers
+│   ├── aiClients.ts         # Provider callers (openai/openrouter, gemini, grok/groq)
 │   └── logger.ts            # Structured test logging
 ├── auth.spec.ts             # Authentication tests
 ├── contact.spec.ts          # Contact form tests
@@ -63,11 +66,12 @@ Project root also includes `.env` (gitignored) for API keys used by healing—se
    ```
 
 4. **Environment (optional, for smart locator healing)**  
-   Copy or create a `.env` file in the project root and set your OpenAI-compatible API key:
+   Copy or create a `.env` file in the project root:
    ```bash
+   LLM_PROVIDER=openai
    OPENAI_API_KEY=sk-...
    ```
-   Healing is skipped if the key is missing or `SMART_LOCATOR_HEAL=false`. See the Smart Locator section below for other variables.
+   Healing is skipped if required provider keys are missing or `SMART_LOCATOR_HEAL=false`.
 
 ## 🧪 Running Tests
 
@@ -105,6 +109,11 @@ npx playwright test --project=webkit
 After running tests, view the HTML report:
 ```bash
 npm run report
+```
+
+If port `9323` is already in use, run on a custom port:
+```bash
+npx playwright show-report --port 9324
 ```
 
 The report includes:
@@ -152,20 +161,59 @@ Centralized test data including:
 
 ### Environment variables (`.env`)
 
-Loaded via `dotenv` in `playwright.config.ts` and `tests/utils/smartLocator.ts`.
+Loaded via `dotenv` in `playwright.config.ts` and `tests/utils/aiConfig.ts`.
+
+#### Provider selection
 
 | Variable | Purpose |
 |----------|---------|
-| `OPENAI_API_KEY` | Required for built-in healing (OpenAI-compatible Chat Completions API). |
-| `OPENAI_API_URL` | Optional. Default: `https://api.openai.com/v1/chat/completions` (use for Azure or other bases). |
-| `OPENAI_MODEL` | Optional. Default: `gpt-4o-mini`. |
-| `SMART_LOCATOR_HEAL` | Set to `false` to disable healing while keeping a key in the environment. |
+| `LLM_PROVIDER` | Active healer backend: `openai`, `gemini`, or `grok`. |
+| `SMART_LOCATOR_HEAL` | Set to `false` to disable healing. |
+
+#### OpenAI/OpenRouter (OpenAI-compatible)
+
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` | API key for OpenAI-compatible chat completions. |
+| `OPENAI_API_URL` | Endpoint (for OpenRouter/custom base URL). |
+| `OPENAI_MODEL` | Model identifier (for OpenRouter, e.g. `openai/gpt-4o-mini`). |
+
+#### Gemini
+
+| Variable | Purpose |
+|----------|---------|
+| `GEMINI_API_KEY` | Google Gemini API key. |
+| `GEMINI_API_URL` | Base URL for Gemini models API. |
+| `GEMINI_MODEL` | Gemini model id (e.g. `gemini-1.5-flash`). |
+
+#### Grok/Groq
+
+| Variable | Purpose |
+|----------|---------|
+| `GROK_API_KEY` | Key used by the configured Grok/Groq-compatible endpoint. |
+| `GROK_API_URL` | Chat completions URL (for xAI or Groq-compatible endpoint). |
+| `GROK_MODEL` | Model id (e.g. `grok-2-latest` or Groq-served model). |
+
+#### Healing tuning knobs
+
+| Variable | Purpose |
+|----------|---------|
+| `SMART_LOCATOR_HEAL_MAX_DOM_CHARS` | Max DOM/a11y snapshot chars sent to model (default `14000`). |
+| `SMART_LOCATOR_HEAL_MAX_CANDIDATES` | Max healed candidates to try per failed locator (default `3`). |
+| `SMART_LOCATOR_HEAL_RETRY_TIMEOUT_MS` | Visibility timeout per healed candidate (default `3000`). |
 
 ## 🧠 Smart Locator System
 
-Locators used through `SmartLocator` are **`SmartTarget`** objects: a single Playwright **`locator`** string and a **`prompt`** that describes the element for the healer if the locator times out.
+Locators used through `SmartLocator` are **`SmartTarget`** objects: a single Playwright **`locator`** string and a **`prompt`** that describes the element for healing.
 
-**Flow:** wait for the locator to be visible (short timeout) → on failure, optionally call the model with the prompt, the failed selector, and an accessibility snapshot (with HTML fallback) → if the model returns `{"selector":"..."}`, wait for that locator instead.
+**Robust flow:**
+1. Try original locator with short wait.
+2. If failed, capture accessibility snapshot (fallback to HTML excerpt).
+3. Call active provider (`LLM_PROVIDER`) with strict system prompt.
+4. Parse and normalize model output (supports JSON or plain selector string).
+5. Convert code-style outputs (e.g. `getByRole(...)`) to locator-compatible string when possible.
+6. Build healed candidate list (`primary + generated backups` like `text=...`).
+7. Retry candidates until one becomes visible (bounded by env tuning).
 
 **Define locators** (see `tests/locators/*.locators.ts`):
 
@@ -194,7 +242,7 @@ await this.smart.click({
 });
 ```
 
-You can inject a custom `healProvider` via `new SmartLocator(page, { healProvider })` if you need a non-OpenAI backend. Without `OPENAI_API_KEY` and without a custom provider, healing is skipped and the test fails with the usual Playwright error.
+You can inject a custom `healProvider` via `new SmartLocator(page, { healProvider })` if you need fully custom healing behavior. Without provider credentials and without a custom provider, healing is skipped and normal Playwright failures are surfaced.
 
 ## 🚫 Ad Blocking
 
@@ -237,6 +285,11 @@ npx playwright test --debug
 ### Run Specific Test in Debug Mode
 ```bash
 npx playwright test tests/auth.spec.ts --debug
+```
+
+### Run Auth Healer Scenario (single test)
+```bash
+npx playwright test tests/auth.spec.ts --project=chromium --workers=1 -g "login with incorrect credentials shows error"
 ```
 
 ## 🚀 CI/CD Integration
