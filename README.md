@@ -36,16 +36,19 @@ tests/
 ├── data/
 │   └── testData.ts          # Centralized test data
 ├── utils/
-│   ├── smartLocator.ts      # Smart locator + robust healing/retry pipeline
-│   ├── aiConfig.ts          # Provider/model/api-key resolution + API error helpers
-│   ├── aiClients.ts         # Provider callers (openai/openrouter, gemini, groq)
+│   ├── smartLocator.ts      # Smart locator, config loader, LLM healer, file persistence (single module)
+│   ├── aiConfig.ts          # LLM provider + model + API key resolution (used by healer)
+│   ├── aiClients.ts         # HTTP calls to OpenAI-compatible, Gemini, Groq APIs
 │   └── logger.ts            # Structured test logging
 ├── auth.spec.ts             # Authentication tests
 ├── contact.spec.ts          # Contact form tests
 └── products_cart.spec.ts    # Product and cart tests
+
+# Project root (same level as tests/)
+smart-locator.config.json    # Non-secret SmartLocator settings
 ```
 
-Project root also includes `.env` (gitignored) for API keys used by healing—see [Smart Locator System](#smart-locator-system).
+Project root also includes `.env` (gitignored) for API keys used by healing—see [Smart Locator and healer agent](#smart-locator-and-healer-agent).
 
 ## 🛠️ Installation
 
@@ -194,28 +197,76 @@ Loaded via `dotenv` in `playwright.config.ts` and `tests/utils/aiConfig.ts`.
 | `GROQ_API_URL` | Chat completions URL for Groq-compatible endpoint. |
 | `GROQ_MODEL` | Model id served by Groq (e.g. `llama-3.3-70b-versatile`). |
 
-#### Healing tuning knobs
+#### Smart locator / healer tuning
 
 | Variable | Purpose |
 |----------|---------|
-| `SMART_LOCATOR_HEAL_MAX_DOM_CHARS` | Max DOM/a11y snapshot chars sent to model (default `14000`). |
-| `SMART_LOCATOR_HEAL_MAX_CANDIDATES` | Max healed candidates to try per failed locator (default `3`). |
-| `SMART_LOCATOR_HEAL_RETRY_TIMEOUT_MS` | Visibility timeout per healed candidate (default `3000`). |
+| `SMART_LOCATOR_CONFIG_PATH` | Path to JSON config (default: `./smart-locator.config.json`). |
+| `SMART_LOCATOR_HEAL` | `false` / `0` disables the healing path entirely. |
+| `SMART_LOCATOR_USE_BUILTIN_AI` | `false` turns off the built-in LLM healer (use a custom `healProvider` instead). |
+| `SMART_LOCATOR_PERSIST_FILES` | `false` skips writing healed selectors back to `tests/locators/*.ts`. |
+| `SMART_LOCATOR_LOCATOR_FILES_DIR` | Directory scanned for locator files to update (overrides JSON). |
+| `SMART_LOCATOR_RESOLVE_VISIBLE_TIMEOUT_MS` | Initial wait for the primary locator before healing (default `2000`). |
+| `SMART_LOCATOR_HEAL_MAX_DOM_CHARS` | Max chars of a11y/HTML snapshot sent to the model (default `14000`). |
+| `SMART_LOCATOR_HEAL_MAX_CANDIDATES` | Max healed selector variants to try (default `3`). |
+| `SMART_LOCATOR_HEAL_RETRY_TIMEOUT_MS` | Per-candidate visibility timeout (default `3000`). |
 
-## 🧠 Smart Locator System
+## Smart Locator and healer agent
 
-Locators used through `SmartLocator` are **`SmartTarget`** objects: a single Playwright **`locator`** string and a **`prompt`** that describes the element for healing.
+The **smart locator** layer wraps Playwright actions so a single string selector can fail once, then an optional **healer** proposes a better selector from the live page and your human-readable **prompt**.
 
-**Robust flow:**
-1. Try original locator with short wait.
-2. If failed, capture accessibility snapshot (fallback to HTML excerpt).
-3. Call active provider (`LLM_PROVIDER`) with strict system prompt.
-4. Parse and normalize model output (supports JSON or plain selector string).
-5. Convert code-style outputs (e.g. `getByRole(...)`) to locator-compatible string when possible.
-6. Build healed candidate list (`primary + generated backups` like `text=...`).
-7. Retry candidates until one becomes visible (bounded by env tuning).
+### Related files
 
-**Define locators** (see `tests/locators/*.locators.ts`):
+| File | Role |
+|------|------|
+| `tests/utils/smartLocator.ts` | **`SmartLocator` facade**, `createSmartLocator`, `loadSmartLocatorConfig`, `SmartTarget` types, **`SelectorOps`** (parse, normalize, candidate chain), **`LlmHealAgent`** (LLM call + strict `{"selector":"..."}` response), **`LocatorFilePersister`** (rewrites matching entries in `tests/locators/*.ts` after a successful heal). |
+| `tests/utils/aiConfig.ts` | Resolves **`LLM_PROVIDER`**, model, URL, and API key from `.env`. |
+| `tests/utils/aiClients.ts` | **`callAiProvider`** — HTTP to OpenAI-compatible chat, Gemini, or Groq. |
+| `smart-locator.config.json` | Non-secret defaults: healing, built-in AI, persistence, timeouts, locator folder. Environment variables override this file when set. |
+
+API keys stay in **`.env`** only, not in the JSON file.
+
+### How it works (pipeline)
+
+1. **`SmartLocator`** waits up to **`resolveVisibleTimeoutMs`** for `page.locator(target.locator)` to become visible.
+2. If that fails and **healing is allowed**, it builds a **`domSummary`**: accessibility snapshot when useful, otherwise a truncated `body.innerHTML` excerpt (capped by **`maxDomChars`**).
+3. **`LlmHealAgent`** sends the failed selector, your **`prompt`**, and the snapshot to the configured LLM. The model must answer with a single Playwright selector string (wrapped in JSON as instructed).
+4. **`SelectorOps`** parses the reply (JSON, fenced block, or plain string), **normalizes** common mistakes (quotes, `getByRole` / `getByText`-style snippets → `role=...` / `text=...`), and rejects obvious non-selectors.
+5. A **candidate chain** is built (primary plus fallbacks such as `text=` from accessible names or quoted text in the prompt). Up to **`healMaxCandidates`** are tried, each with **`healRetryTimeoutMs`** visibility wait.
+6. On success, **`target.locator`** is updated **in memory**. If **`persistToLocatorFiles`** is true, **`LocatorFilePersister`** finds the matching `locator` + `prompt` pair in `tests/locators/*.ts` and updates the file.
+
+If the LLM is not configured or healing is disabled, failures behave like a normal Playwright run on the original selector.
+
+### Configuration (`smart-locator.config.json`)
+
+| Field | Meaning |
+|-------|---------|
+| `heal` | Whether to attempt healing after the primary locator times out (overridable by `SMART_LOCATOR_HEAL`). |
+| `useBuiltinAi` | When `true`, uses **`LlmHealAgent`** unless you pass a custom **`healProvider`** in code. |
+| `persistToLocatorFiles` | Write successful heals back into locator source files under **`locatorFilesDir`**. |
+| `locatorFilesDir` | Folder of `*.ts` locator modules (relative to project root unless absolute). |
+| `resolveVisibleTimeoutMs` | First wait before invoking the healer. |
+| `maxDomChars` | Max snapshot size sent to the model. |
+| `healMaxCandidates` / `healRetryTimeoutMs` | Candidate retry limits. |
+
+Use **`loadSmartLocatorConfig({ ... })`** or **`createSmartLocator(page, { ... })`** to merge options in code without editing the JSON.
+
+### Usage
+
+**Page objects** (recommended — loads JSON + env automatically):
+
+```typescript
+import { createSmartLocator, type SmartLocator } from '../utils/smartLocator';
+
+export class AuthPage {
+  private readonly smart: SmartLocator;
+  constructor(private readonly page: Page) {
+    this.smart = createSmartLocator(page);
+  }
+}
+```
+
+**Locators** are **`SmartTarget`** objects (`locator` + `prompt`), e.g. in `tests/locators/*.locators.ts`:
 
 ```typescript
 import type { SmartTarget } from '../utils/smartLocator';
@@ -226,14 +277,15 @@ readonly loginButton: SmartTarget = {
 };
 ```
 
-**Use in page objects:**
+**Actions:**
 
 ```typescript
 await this.smart.click(this.loc.loginButton);
 await this.smart.fill(this.loc.loginEmail, email);
+await this.smart.expectText(this.loc.loginHeader, 'Login to your account');
 ```
 
-**Inline target** (e.g. one-off actions):
+**Inline `SmartTarget`:**
 
 ```typescript
 await this.smart.click({
@@ -242,7 +294,20 @@ await this.smart.click({
 });
 ```
 
-You can inject a custom `healProvider` via `new SmartLocator(page, { healProvider })` if you need fully custom healing behavior. Without provider credentials and without a custom provider, healing is skipped and normal Playwright failures are surfaced.
+**Advanced:**
+
+```typescript
+// Manual options only (merge with JSON yourself if needed)
+new SmartLocator(page, { heal: false });
+
+// JSON + env, plus overrides
+createSmartLocator(page, {
+  logger: myLogger,
+  healProvider: async (ctx) => 'text=Submit',
+});
+```
+
+Without valid credentials for **`LLM_PROVIDER`**, the built-in healer cannot call the API; healing then does not recover the step and Playwright surfaces the original failure.
 
 ## 🚫 Ad Blocking
 

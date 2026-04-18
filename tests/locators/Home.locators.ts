@@ -7,7 +7,7 @@ export class HomeLocators {
   };
 
   readonly signupLoginLink: SmartTarget = {
-    locator: '//*[@id="header"]/div/div/glgldiv/ul/li[4]/a',
+    locator: 'text=Signup / Login',
     prompt: 'Header link "Signup / Login" to /login.',
   };
 

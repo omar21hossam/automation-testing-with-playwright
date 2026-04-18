@@ -1,0 +1,11 @@
+{
+  "heal": true,
+  "useBuiltinAi": true,
+  "persistToLocatorFiles": true,
+  "locatorFilesDir": "tests/locators",
+  "resolveVisibleTimeoutMs": 2000,
+  "maxDomChars": 14000,
+  "healWaitTimeoutMs": 8000,
+  "healMaxCandidates": 3,
+  "healRetryTimeoutMs": 3000
+}

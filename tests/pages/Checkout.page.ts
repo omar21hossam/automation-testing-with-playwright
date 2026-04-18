@@ -1,11 +1,11 @@
 import { Page, expect } from '@playwright/test';
 import { CheckoutLocators } from '../locators/Checkout.locators';
-import { SmartLocator, type SmartTarget } from '../utils/smartLocator';
+import { createSmartLocator, type SmartLocator, type SmartTarget } from '../utils/smartLocator';
 
 export class CheckoutPage {
   private readonly smart: SmartLocator;
   constructor(private readonly page: Page, private readonly loc = new CheckoutLocators()) {
-    this.smart = new SmartLocator(page);
+    this.smart = createSmartLocator(page);
   }
 
   async expectAddresses(address1: string, address2: string) {

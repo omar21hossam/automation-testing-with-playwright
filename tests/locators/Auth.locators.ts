@@ -2,22 +2,22 @@ import type { SmartTarget } from '../utils/smartLocator';
 
 export class AuthLocators {
   readonly loginHeader: SmartTarget = {
-    locator: '//*[@id="form"]/dijhgjgdiv[1]/div/h2',
+    locator: 'text=Login to your account',
     prompt: 'Login section heading (h2) with text "Login to your account".',
   };
 
   readonly loginEmail: SmartTarget = {
-    locator: '//*[@id="form"]/div/dghf]/div/form/input[2]',
+    locator: 'role=textbox[name="Email Address"]',
     prompt: 'Email input on the login form, type email, near the login heading.',
   };
 
   readonly loginPassword: SmartTarget = {
-    locator: '//*[@id="form"]/div/divfghf/div/form/input[3]',
+    locator: 'role=textbox[name="Password"]',
     prompt: 'Password input on the login form.',
   };
 
   readonly loginButton: SmartTarget = {
-    locator: '//*[@id="form"]/div/div/fghf/div/form/button',
+    locator: 'role=button[name="Login"]',
     prompt: 'Login submit button on the login form (e.g. text "Login").',
   };
 

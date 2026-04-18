@@ -1,12 +1,12 @@
 import { Page, expect } from '@playwright/test';
 import { AuthLocators } from '../locators/Auth.locators';
-import { SmartLocator } from '../utils/smartLocator';
+import { createSmartLocator, type SmartLocator } from '../utils/smartLocator';
 import { logger } from '../utils/logger';
 
 export class AuthPage {
   private readonly smart: SmartLocator;
   constructor(private readonly page: Page, private readonly loc = new AuthLocators()) {
-    this.smart = new SmartLocator(page);
+    this.smart = createSmartLocator(page);
   }
 
   async expectLoginPage() {

@@ -1,12 +1,12 @@
 import { Page, expect } from '@playwright/test';
 import { HomeLocators } from '../locators/Home.locators';
-import { SmartLocator } from '../utils/smartLocator';
+import { createSmartLocator, type SmartLocator } from '../utils/smartLocator';
 import { logger } from '../utils/logger';
 
 export class HomePage {
   private readonly smart: SmartLocator;
   constructor(private readonly page: Page, private readonly loc = new HomeLocators()) {
-    this.smart = new SmartLocator(page);
+    this.smart = createSmartLocator(page);
   }
 
   async goto() {

@@ -1,11 +1,11 @@
 import { Page, expect } from '@playwright/test';
 import { CartLocators } from '../locators/Cart.locators';
-import { SmartLocator } from '../utils/smartLocator';
+import { createSmartLocator, type SmartLocator } from '../utils/smartLocator';
 
 export class CartPage {
   private readonly smart: SmartLocator;
   constructor(private readonly page: Page, private readonly loc = new CartLocators()) {
-    this.smart = new SmartLocator(page);
+    this.smart = createSmartLocator(page);
   }
 
   async expectProduct1(name: string, price: string, qty: string) {
