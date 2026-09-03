@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: Library tests
 on:
   push:
     branches: [ main, master ]
@@ -6,7 +6,7 @@ on:
     branches: [ main, master ]
 jobs:
   test:
-    timeout-minutes: 60
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -15,13 +15,9 @@ jobs:
         node-version: lts/*
     - name: Install dependencies
       run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
+    - name: Install Playwright Chromium
+      run: npx playwright install --with-deps chromium
+    - name: Build
+      run: npm run build
+    - name: Run library tests
       run: npx playwright test
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30

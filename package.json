@@ -1,20 +1,42 @@
 {
-  "name": "playwright",
+  "name": "@omar21hossam/playwright-smart-locator",
   "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "test": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed",
-    "report": "playwright show-report"
-  },
-  "keywords": [],
-  "author": "",
+  "description": "Self-healing Playwright locators with a pluggable healer and locator-file write-back.",
+  "author": "Omar Hossam",
   "license": "ISC",
-  "description": "",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "docs"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.lib.json",
+    "prepare": "npm run build",
+    "pack:lib": "npm run build && npm pack",
+    "test": "npm run build && playwright test"
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "self-healing",
+    "locator",
+    "automation"
+  ],
+  "peerDependencies": {
+    "@playwright/test": ">=1.40.0"
+  },
   "devDependencies": {
     "@playwright/test": "^1.54.1",
     "@types/node": "^24.1.0",
-    "dotenv": "^17.4.0"
+    "typescript": "^5.9.2"
   }
 }
