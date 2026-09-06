@@ -11,6 +11,7 @@ export { LocatorFilePersister } from './healer/locatorFilePersister';
 export {
   handleApiError,
   resolveAiProvider,
+  resolveCursorCliInvocation,
   resolveProviderConfig,
   toErrorMessage,
 } from './ai/aiConfig';

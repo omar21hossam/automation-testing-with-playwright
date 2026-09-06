@@ -91,10 +91,74 @@ GROQ_API_URL=
 GROQ_MODEL=
 ```
 
-`LLM_PROVIDER` must be `openai`, `gemini`, or `groq`. For the selected
-provider, **API key, API URL, and model are all required**. If any of them is
-missing, built-in healing is skipped and the original Playwright error is
-shown.
+`LLM_PROVIDER` must be `openai`, `gemini`, `groq`, or `cursor`. For OpenAI,
+Gemini, and Groq, **API key, API URL, and model are all required**. For
+Cursor CLI, see the next section. If a required HTTP field is missing,
+built-in healing is skipped and the original Playwright error is shown.
+
+## Using the Cursor CLI as the healer
+
+The library can call the **Cursor CLI** on your machine instead of an HTTP
+LLM. There is no API key and no endpoint URL. The CLI must be installed and
+you must already be signed in.
+
+### 1. Install and sign in
+
+1. Install Cursor CLI so either `agent` or `cursor` is on your `PATH`.
+2. Sign in from a terminal (`agent login`, or the login command your CLI
+   build prints).
+3. Confirm it works: `agent --help` or `cursor agent --help`.
+
+This path is for **local** test runs. GitHub Actions and other CI must either
+install and authenticate the CLI, or set `LLM_PROVIDER` to openai, gemini, or
+groq.
+
+### 2. Consumer `.env`
+
+```env
+LLM_PROVIDER=cursor
+CURSOR_CLI=agent
+CURSOR_MODEL=
+```
+
+| Variable | Required | Meaning |
+| --- | --- | --- |
+| `LLM_PROVIDER` | yes | Must be `cursor`. |
+| `CURSOR_CLI` | no | Command to spawn. Default `agent`. Use `cursor agent` if that is how you invoke the CLI. |
+| `CURSOR_MODEL` | no | CLI model id. Empty uses the CLI default. |
+
+Load `.env` in Playwright config as shown above. This package does not load
+`.env` itself.
+
+A copy of these variables is in `.env.example`.
+
+### 3. What happens on a failed locator
+
+The healer runs a **non-interactive** print command and reads stdout:
+
+```bash
+agent -p "<heal prompt>" --output-format text
+```
+
+If `CURSOR_MODEL` is set, `--model` is added. If `CURSOR_CLI` is unset and
+`agent` is missing, the library retries:
+
+```bash
+cursor agent -p "<heal prompt>" --output-format text
+```
+
+The CLI must reply with Playwright locator syntax (JSON
+`{"selector":"..."}` is preferred). The library verifies the selector is
+visible, then can write it back to your locator file.
+
+If the CLI is not on `PATH`, is not logged in, or exits with an error,
+healing is skipped and Playwright fails on the original locator.
+
+### 4. Run tests
+
+```bash
+npx playwright test
+```
 
 Optional library flags (consumer env or a local `smart-locator.config.json`):
 

@@ -10,6 +10,8 @@ type ProviderEnvMap = {
   apiKey?: string;
 };
 
+const VALID_PROVIDERS: AiProvider[] = ['openai', 'gemini', 'groq', 'cursor'];
+
 /**
  * Reads model, endpoint, and API-key environment variables for one provider.
  *
@@ -31,11 +33,25 @@ function readProviderEnv(provider: AiProvider): ProviderEnvMap {
       apiKey: process.env.GEMINI_API_KEY,
     };
   }
+  if (provider === 'cursor') {
+    return { model: process.env.CURSOR_MODEL };
+  }
   return {
     model: process.env.GROQ_MODEL,
     apiUrl: process.env.GROQ_API_URL,
     apiKey: process.env.GROQ_API_KEY,
   };
+}
+
+/**
+ * Resolves the Cursor CLI executable and extra argv prefix from `CURSOR_CLI`.
+ *
+ * @returns Command name and optional prefix arguments (for `cursor agent`).
+ */
+export function resolveCursorCliInvocation(): { command: string; prefixArgs: string[] } {
+  const raw = process.env.CURSOR_CLI?.trim() || 'agent';
+  const parts = raw.split(/\s+/).filter(Boolean);
+  return { command: parts[0] ?? 'agent', prefixArgs: parts.slice(1) };
 }
 
 /**
@@ -46,7 +62,7 @@ function readProviderEnv(provider: AiProvider): ProviderEnvMap {
  */
 export function resolveAiProvider(logger?: Pick<SmartLocatorLogger, 'warn'>): AiProvider {
   const raw = (process.env.LLM_PROVIDER ?? 'openai').toLowerCase();
-  if (raw === 'openai' || raw === 'gemini' || raw === 'groq') return raw;
+  if ((VALID_PROVIDERS as string[]).includes(raw)) return raw as AiProvider;
   logger?.warn('AI_CONFIG', 'Invalid LLM_PROVIDER value; defaulting to openai', { value: raw });
   return 'openai';
 }
@@ -54,18 +70,26 @@ export function resolveAiProvider(logger?: Pick<SmartLocatorLogger, 'warn'>): Ai
 /**
  * Resolves provider settings from the consumer environment only.
  *
+ * HTTP providers require key, URL, and model. Cursor CLI requires none of those;
+ * an empty model uses the CLI default.
+ *
  * @param provider Provider to configure; defaults to `LLM_PROVIDER`.
  * @param logger Optional logger used for missing credential warnings.
- * @returns Complete provider configuration, or `null` when key, URL, or model is missing.
+ * @returns Complete provider configuration, or `null` when required HTTP fields are missing.
  */
 export function resolveProviderConfig(
   provider = resolveAiProvider(),
   logger?: Pick<SmartLocatorLogger, 'warn'>,
 ): ProviderConfig | null {
   const env = readProviderEnv(provider);
+  const model = env.model?.trim() ?? '';
+
+  if (provider === 'cursor') {
+    return { provider, model };
+  }
+
   const apiKey = env.apiKey?.trim() ?? '';
   const apiUrl = env.apiUrl?.trim() ?? '';
-  const model = env.model?.trim() ?? '';
   if (!apiKey) {
     logger?.warn('AI_CONFIG', `API key is missing for provider: ${provider}`);
     return null;

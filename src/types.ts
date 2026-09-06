@@ -39,14 +39,16 @@ export type SmartLocatorLogger = {
 };
 
 /** Supported built-in LLM providers. */
-export type AiProvider = 'openai' | 'gemini' | 'groq';
+export type AiProvider = 'openai' | 'gemini' | 'groq' | 'cursor';
 
 /** Resolved credentials and endpoint for a built-in LLM provider. */
 export type ProviderConfig = {
   provider: AiProvider;
   model: string;
-  apiUrl: string;
-  apiKey: string;
+  /** HTTP endpoint; omitted for the Cursor CLI provider. */
+  apiUrl?: string;
+  /** HTTP API key; omitted for the Cursor CLI provider. */
+  apiKey?: string;
 };
 
 /** Values accepted in `smart-locator.config.json`. */

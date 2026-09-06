@@ -31,7 +31,45 @@ Gemini: `GEMINI_API_KEY`, `GEMINI_API_URL`, `GEMINI_MODEL` with
 
 Groq: `GROQ_API_KEY`, `GROQ_API_URL`, `GROQ_MODEL` with `LLM_PROVIDER=groq`.
 
-All three of key, URL, and model must be non-empty for the selected provider.
+All three of key, URL, and model must be non-empty for HTTP providers.
+
+## Cursor CLI healer
+
+Set `LLM_PROVIDER=cursor` to heal with the **Cursor CLI** instead of HTTP.
+No API key and no URL are used. The process that runs Playwright must have
+the CLI on `PATH` and an existing CLI login.
+
+### Setup
+
+1. Install Cursor CLI (`agent` and/or `cursor` on `PATH`).
+2. Sign in (`agent login`, or the login command your CLI version documents).
+3. Copy `.env.example` to `.env` in the **consumer** project (gitignored).
+4. Load `.env` before tests (`dotenv.config()` in Playwright config).
+
+```env
+LLM_PROVIDER=cursor
+CURSOR_CLI=agent
+CURSOR_MODEL=
+```
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `CURSOR_CLI` | `agent` | Binary plus optional subcommand, e.g. `cursor agent`. |
+| `CURSOR_MODEL` | CLI default | Passed as `--model` when non-empty. |
+
+### Runtime command
+
+```bash
+agent -p "<heal prompt>" --output-format text
+```
+
+If `CURSOR_CLI` is unset and `agent` is not found, the library retries
+`cursor agent` with the same flags. Stdout is parsed as a Playwright
+selector (JSON `{"selector":"..."}` preferred).
+
+Use this locally. For CI, install and authenticate the CLI or switch
+`LLM_PROVIDER`. Missing CLI, failed login, or a non-zero exit skips healing
+and Playwright reports the original locator error.
 
 Optional `SMART_LOCATOR_*` variables are listed in the README.
 
@@ -90,5 +128,5 @@ Built-in `HealProvider`. Uses the consumer environment via
 
 ### Other exports
 
-`resolveAiProvider`, `resolveProviderConfig`, `callAiProvider`,
-`handleApiError`, `toErrorMessage`.
+`resolveAiProvider`, `resolveProviderConfig`, `resolveCursorCliInvocation`,
+`callAiProvider`, `handleApiError`, `toErrorMessage`.
